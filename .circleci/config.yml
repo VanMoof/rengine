@@ -16,7 +16,7 @@ jobs:
     resource_class: small
     environment:
       PROJECT_NAME: platformservices
-      CONTAINER_NAME: reNgine
+      CONTAINER_NAME: rengine
     steps:
       - setup_remote_docker:
           version: 20.10.12
