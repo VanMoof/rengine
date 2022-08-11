@@ -8,15 +8,15 @@ workflows:
     jobs:
       - build:
           context:
-            - rengine
+            - reNgine
 
 jobs:
   build:
     executor: docker/docker
     resource_class: small
     environment:
-      PROJECT_NAME: rengine
-      CONTAINER_NAME: rengine
+      PROJECT_NAME: platformservices
+      CONTAINER_NAME: reNgine
     steps:
       - setup_remote_docker:
           version: 20.10.12
