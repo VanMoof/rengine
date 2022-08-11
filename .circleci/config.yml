@@ -1,0 +1,38 @@
+version: 2.1
+
+orbs:
+  docker: circleci/docker@2.1.0
+
+workflows:
+  build:
+    jobs:
+      - build:
+          context:
+            - rengine
+
+jobs:
+  build:
+    executor: docker/docker
+    resource_class: small
+    environment:
+      PROJECT_NAME: rengine
+      CONTAINER_NAME: rengine
+    steps:
+      - setup_remote_docker:
+          version: 20.10.12
+          docker_layer_caching: true
+      - checkout
+      - run:
+          name: Login to Harbor
+          command: |
+            docker login --username "$HARBOR_REGISTRY_USERNAME" --password "$HARBOR_REGISTRY_SECRET" https://registry.production.services.vanmoof.cloud
+      - run:
+          name: Build Docker image
+          command: |
+            cd web
+            docker build -t registry.production.services.vanmoof.cloud/$PROJECT_NAME/$CONTAINER_NAME:$CIRCLE_SHA1 -f Dockerfile .
+            docker images
+      - run:
+          name: Push Docker image to Harbor
+          command: |
+            docker push registry.production.services.vanmoof.cloud/$PROJECT_NAME/$CONTAINER_NAME:$CIRCLE_SHA1
