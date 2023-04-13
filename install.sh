@@ -1,7 +1,7 @@
 #!/bin/bash
 
 tput setaf 2;
-cat web/art/1.1.txt
+cat web/art/reNgine.txt
 
 tput setaf 1; echo "Before running this script, please make sure Docker is running and you have made changes to .env file."
 tput setaf 2; echo "Changing the postgres username & password from .env is highly recommended."
@@ -95,6 +95,9 @@ echo "#########################################################################"
 if systemctl is-active docker >/dev/null 2>&1; then
   tput setaf 4;
   echo "Docker is running."
+ elif service docker status > /dev/null 2>&1; then
+  tput setaf 4;
+  echo "Docker is running"
 else
   tput setaf 1;
   echo "Docker is not running. Please run docker and try again."
@@ -109,17 +112,19 @@ tput setaf 4;
 echo "#########################################################################"
 echo "Installing reNgine"
 echo "#########################################################################"
-make certs && make build && make up
+make certs && make build && make up && tput setaf 2 && echo "reNgine is installed!!!" && failed=0 || failed=1
 
-tput setaf 2; echo "reNgine is installed!!!"
+if [ "${failed}" -eq 0 ]; then
+  sleep 3
 
-sleep 3
+  echo " "
+  tput setaf 4;
+  echo "#########################################################################"
+  echo "Creating an account"
+  echo "#########################################################################"
+  make username
 
-echo " "
-tput setaf 4;
-echo "#########################################################################"
-echo "Creating an account"
-echo "#########################################################################"
-make username
-
-tput setaf 2; echo "Thank you for installing reNgine, happy recon!!"
+  tput setaf 2 && printf "\n%s\n" "Thank you for installing reNgine, happy recon!!"
+else
+  tput setaf 1 && printf "\n%s\n" "reNgine installation failed!!"
+fi

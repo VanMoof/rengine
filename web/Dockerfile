@@ -41,10 +41,10 @@ RUN apt update -y && apt install -y  --no-install-recommends \
     geoip-database
 
 
-# Download and install go 1.17
-RUN wget https://golang.org/dl/go1.17.2.linux-amd64.tar.gz
-RUN tar -xvf go1.17.2.linux-amd64.tar.gz
-RUN rm go1.17.2.linux-amd64.tar.gz
+# Download and install go 1.20
+RUN wget https://golang.org/dl/go1.20.linux-amd64.tar.gz
+RUN tar -xvf go1.20.linux-amd64.tar.gz
+RUN rm go1.20.linux-amd64.tar.gz
 RUN mv go /usr/local
 
 # Download geckodriver
@@ -75,7 +75,7 @@ RUN GO111MODULE=on go install -v -v github.com/bp0lr/gauplus@latest
 
 RUN GO111MODULE=on go install -v github.com/jaeles-project/gospider@latest
 
-RUN go install -v github.com/OWASP/Amass/v3/...@latest
+RUN go install -v github.com/owasp-amass/amass/v3/...@latest
 
 RUN go install -v github.com/ffuf/ffuf@latest
 

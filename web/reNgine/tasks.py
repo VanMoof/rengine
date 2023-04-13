@@ -546,7 +546,8 @@ def subdomain_scan(
 
 	try:
 		for tool in tools.split(' '):
-			if tool in default_subdomain_tools:
+			# fixing amass-passive and amass-active
+			if tool in tools:
 				if tool == 'amass-passive':
 					amass_command = 'amass enum -passive -d {} -o {}/from_amass.txt'.format(
 							domain.name, results_dir)
@@ -819,26 +820,26 @@ def http_crawler(task, domain, yaml_configuration, results_dir, activity_id, thr
 				if 'url' in json_st:
 					endpoint.http_url = json_st['url']
 					subdomain.http_url = json_st['url']
-				if 'status-code' in json_st:
-					endpoint.http_status = json_st['status-code']
-					subdomain.http_status = json_st['status-code']
+				if 'status_code' in json_st:
+					endpoint.http_status = json_st['status_code']
+					subdomain.http_status = json_st['status_code']
 				if 'title' in json_st:
 					endpoint.page_title = json_st['title']
 					subdomain.page_title = json_st['title']
-				if 'content-length' in json_st:
-					endpoint.content_length = json_st['content-length']
-					subdomain.content_length = json_st['content-length']
-				if 'content-type' in json_st:
-					endpoint.content_type = json_st['content-type']
-					subdomain.content_type = json_st['content-type']
+				if 'content_length' in json_st:
+					endpoint.content_length = json_st['content_length']
+					subdomain.content_length = json_st['content_length']
+				if 'content_type' in json_st:
+					endpoint.content_type = json_st['content_type']
+					subdomain.content_type = json_st['content_type']
 				if 'webserver' in json_st:
 					endpoint.webserver = json_st['webserver']
 					subdomain.webserver = json_st['webserver']
-				if 'response-time' in json_st:
+				if 'time' in json_st:
 					response_time = float(
 						''.join(
-							ch for ch in json_st['response-time'] if not ch.isalpha()))
-					if json_st['response-time'][-2:] == 'ms':
+							ch for ch in json_st['time'] if not ch.isalpha()))
+					if json_st['time'][-2:] == 'ms':
 						response_time = response_time / 1000
 					endpoint.response_time = response_time
 					subdomain.response_time = response_time
@@ -851,8 +852,8 @@ def http_crawler(task, domain, yaml_configuration, results_dir, activity_id, thr
 				endpoint.is_default = True
 				endpoint.save()
 				subdomain.save()
-				if 'technologies' in json_st:
-					for _tech in json_st['technologies']:
+				if 'tech' in json_st:
+					for _tech in json_st['tech']:
 						if Technology.objects.filter(name=_tech).exists():
 							tech = Technology.objects.get(name=_tech)
 						else:
@@ -899,8 +900,10 @@ def http_crawler(task, domain, yaml_configuration, results_dir, activity_id, thr
 						)
 						ip.geo_iso = iso_object
 					ip.save()
-				if json_st.get('status-code') < 400:
-					alive_file.write(json_st['url'] + '\n')
+				if 'status_code' in json_st:
+					sts_code = json_st.get('status_code')
+					if str(sts_code).isdigit() and int(sts_code) < 400:
+						alive_file.write(json_st['url'] + '\n')
 				subdomain.save()
 				endpoint.save()
 			except Exception as exception:
@@ -1051,6 +1054,10 @@ def port_scanning(
 	if USE_NAABU_CONFIG in yaml_configuration[PORT_SCAN] and yaml_configuration[PORT_SCAN][USE_NAABU_CONFIG]:
 		naabu_command += ' -config /root/.config/naabu/config.yaml '
 
+	proxy = get_random_proxy()
+	if proxy:
+		naabu_command += ' -proxy "{}" '.format(proxy)
+
 	# run naabu
 	logger.info(naabu_command)
 	process = subprocess.Popen(naabu_command.split())
@@ -1062,7 +1069,7 @@ def port_scanning(
 		lines = port_json_result.readlines()
 		for line in lines:
 			json_st = json.loads(line.strip())
-			port_number = json_st['port']
+			port_number = json_st['port']['Port']
 			ip_address = json_st['ip']
 			host = json_st['host']
 
@@ -1325,7 +1332,7 @@ def directory_fuzz(
 		# proxy
 		proxy = get_random_proxy()
 		if proxy:
-			ffuf_command = "{} -x '{}'".format(
+			ffuf_command = '{} -x {} '.format(
 				ffuf_command,
 				proxy
 			)
@@ -1644,20 +1651,20 @@ def fetch_endpoints(
 					endpoint.page_title = json_st['title']
 				if 'webserver' in json_st:
 					endpoint.webserver = json_st['webserver']
-				if 'content-length' in json_st:
-					endpoint.content_length = json_st['content-length']
-				if 'content-type' in json_st:
-					endpoint.content_type = json_st['content-type']
-				if 'status-code' in json_st:
-					endpoint.http_status = json_st['status-code']
-				if 'response-time' in json_st:
-					response_time = float(''.join(ch for ch in json_st['response-time'] if not ch.isalpha()))
-					if json_st['response-time'][-2:] == 'ms':
+				if 'content_length' in json_st:
+					endpoint.content_length = json_st['content_length']
+				if 'content_type' in json_st:
+					endpoint.content_type = json_st['content_type']
+				if 'status_code' in json_st:
+					endpoint.http_status = json_st['status_code']
+				if 'time' in json_st:
+					response_time = float(''.join(ch for ch in json_st['time'] if not ch.isalpha()))
+					if json_st['time'][-2:] == 'ms':
 						response_time = response_time / 1000
 					endpoint.response_time = response_time
 				endpoint.save()
-				if 'technologies' in json_st:
-					for _tech in json_st['technologies']:
+				if 'tech' in json_st:
+					for _tech in json_st['tech']:
 						if Technology.objects.filter(name=_tech).exists():
 							tech = Technology.objects.get(name=_tech)
 						else:
@@ -1780,11 +1787,11 @@ def vulnerability_scan(
 
 		vulnerability_scan_input_file = results_dir + urls_path
 
-		nuclei_command = 'nuclei -json -l {} -o {}'.format(
+		nuclei_command = 'nuclei -j -l {} -o {}'.format(
 			vulnerability_scan_input_file, vulnerability_result_path)
 	else:
 		url_to_scan = subdomain.http_url if subdomain.http_url else 'https://' + subdomain.name
-		nuclei_command = 'nuclei -json -u {} -o {}'.format(url_to_scan, vulnerability_result_path)
+		nuclei_command = 'nuclei -j -u {} -o {}'.format(url_to_scan, vulnerability_result_path)
 		domain_id = scan_history.domain.id
 		domain = Domain.objects.get(id=domain_id)
 
